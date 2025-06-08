@@ -25,7 +25,7 @@ const ProfilePage = () => {
             if (targetUserId) {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('*')
+                    .select('*, flairs')
                     .eq('id', targetUserId)
                     .single();
 
@@ -45,9 +45,10 @@ const ProfilePage = () => {
                         current_momentum: data.current_momentum,
                         lifetime_energy: data.lifetime_energy,
                         lifetime_momentum: data.lifetime_momentum,
+                        flairs: data.flairs,
                         common_followers: data.common_followers,
                         goals: data.goals,
-                        activity_log: data.activity_log,
+                        activityLog: data.activity_log,
                         is_danger: data.is_in_danger_zone,
                         is_public: data.is_public,
                         goal_slots: data.goal_slots
@@ -62,9 +63,10 @@ const ProfilePage = () => {
                         current_momentum: 1,
                         lifetime_energy: 0,
                         lifetime_momentum: 1,
+                        flairs: [],
                         common_followers: 0,
                         goals: [],
-                        activity_log: [],
+                        activityLog: [],
                         is_danger: false,
                         is_public: false,
                         goal_slots: 1
@@ -102,8 +104,8 @@ const ProfilePage = () => {
                     <img
                         src={profileData?.avatar_url || `https://placehold.co/128x128/E0E0E0/B0B0B0?text=${(profileData?.display_name?.charAt(0) || 'U').toUpperCase()}`}
                         alt="Profile"
-                        class_name="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-500"
-                        onerror={(e) => e.target.src = `https://placehold.co/128x128/E0E0E0/B0B0B0?text=${(profileData?.display_name?.charAt(0) || 'U').toUpperCase()}`}
+                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-500"
+                        onError={(e) => e.target.src = `https://placehold.co/128x128/E0E0E0/B0B0B0?text=${(profileData?.display_name?.charAt(0) || 'U').toUpperCase()}`}
                     />
                     <div className="text-center sm:text-left">
                         <h1 className="text-3xl font-bold text-gray-800">{profileData?.display_name || 'Unknown User'}</h1>
@@ -129,11 +131,11 @@ const ProfilePage = () => {
                         <p className="text-sm text-gray-500">Momentum</p>
                     </div>
                     <div>
-                        <p className="text-2xl font-bold text-green-600">{profileData?.lifetimePoints || 0}</p>
+                        <p className="text-2xl font-bold text-green-600">{profileData?.lifetime_energy || 0}</p>
                         <p className="text-sm text-gray-500">Lifetime Points</p>
                     </div>
                     <div>
-                        <p className="text-2xl font-bold text-purple-600">🏆 {profileData?.max_momentum_achieved || 1}</p>
+                        <p className="text-2xl font-bold text-purple-600">🏆 {profileData?.lifetime_momentum || 1}</p>
                         <p className="text-sm text-gray-500">Max Momentum</p>
                     </div>
                 </div>
@@ -144,12 +146,20 @@ const ProfilePage = () => {
                     </p>
                 )}
                 {isOwnProfile && (
-                    <button
-                        onclick={() => navigate('/settings')}
-                        class_name="mt-4 w-full sm:w-auto flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                        <SettingsIcon size={16} class_name="mr-2" /> Edit Profile / Settings
-                    </button>
+                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={() => navigate('/settings')}
+                            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            <SettingsIcon size={16} className="mr-2" /> Edit Profile / Settings
+                        </button>
+                        <button
+                            onClick={() => navigate('/manage-goals')}
+                            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 border border-blue-500 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                            <Award size={16} className="mr-2" /> Manage Goals
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -186,10 +196,10 @@ const ProfilePage = () => {
             {isOwnProfile && (
                 <div className="mt-6 flex justify-center">
                     <button
-                        onclick={handleSignOut}
-                        class_name="flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        onClick={handleSignOut}
+                        className="flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                        <LogOut size={18} class_name="mr-2" /> Sign Out
+                        <LogOut size={18} className="mr-2" /> Sign Out
                     </button>
                 </div>
             )}

@@ -1,0 +1,67 @@
+id,activity_class,activity_label
+1,Strength,Powerlifting
+2,Strength,Weightlifting (Olympic)
+3,Strength,Bodybuilding
+4,Strength,Strongman
+5,Strength,CrossFit
+6,Strength,Functional fitness
+7,Strength,Calisthenics
+8,Strength,Gymnastics (Strength elements)
+9,Strength,Climbing
+10,Strength,Pole dancing
+11,Strength,Manual labor-style training
+12,Speed,Sprinting
+13,Speed,Hurdles
+14,Speed,Short-distance swimming
+15,Speed,Parkour
+16,Speed,Football (soccer)
+17,Speed,American football
+18,Speed,Rugby
+19,Speed,Basketball
+20,Speed,Badminton
+21,Speed,Ice hockey
+22,Speed,Boxing
+23,Speed,Muay Thai
+24,Speed,HIIT
+25,Speed,Agility ladder drills
+26,Speed,Dodgeball
+27,Balance,Walking
+28,Balance,Hiking
+29,Balance,Yoga
+30,Balance,Pilates
+31,Balance,Tai Chi
+32,Balance,Stretching routines
+33,Balance,Dance (low-impact forms)
+34,Balance,Balance flow
+35,Balance,Aqua aerobics
+36,Balance,Nordic walking
+37,Balance,Active recovery days
+38,Balance,Physical therapy
+39,Skill,Gymnastics (control elements)
+40,Skill,Dance
+41,Skill,Figure skating
+42,Skill,Skateboarding
+43,Skill,Surfing
+44,Skill,Rock climbing
+45,Skill,Martial arts
+46,Skill,Archery
+47,Skill,Fencing
+48,Skill,Slacklining
+49,Skill,Equestrian
+50,Skill,Table tennis
+51,Skill,Golf
+52,Skill,Bowling
+53,Extreme,Long-distance running
+54,Extreme,Trail running
+55,Extreme,Triathlon
+56,Extreme,Ultra-endurance races
+57,Extreme,Cycling
+58,Extreme,Mountain biking
+59,Extreme,Cross-country skiing
+60,Extreme,Mountaineering
+61,Extreme,Adventure racing
+62,Extreme,Open water swimming
+63,Extreme,Free diving
+64,Extreme,Extreme sports
+65,Extreme,Ironman competitions
+

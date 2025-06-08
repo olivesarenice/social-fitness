@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import LogActivityPage from './pages/LogActivityPage'; // Placeholder for Log Activity
 import LoginPage from './pages/LoginPage';
+import ManageGoalsPage from './pages/ManageGoalsPage'; // Import the new page
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import { supabase } from './supabaseClient';
@@ -50,8 +51,9 @@ function App() {
                                     console.error("Error fetching profile:", error);
                                 }
 
+                                // If no profile data, redirect to manage-goals to prompt goal creation
                                 if (!data) {
-                                    navigate('/settings');
+                                    navigate('/manage-goals');
                                 } else {
                                     navigate('/');
                                 }
@@ -94,6 +96,7 @@ function App() {
                                 <Route path="profile" element={<ProfilePage />} />
                                 <Route path="profile/:userId" element={<ProfilePage />} /> {/* For viewing other profiles */}
                                 <Route path="log-activity" element={<LogActivityPage />} />
+                                <Route path="manage-goals" element={<ManageGoalsPage />} /> {/* New route for managing goals */}
                                 <Route path="settings" element={<SettingsPage />} />
                                 {/* Add other protected routes here */}
                                 <Route path="*" element={<Navigate to="/" replace />} /> {/* Fallback for unknown protected routes */}
