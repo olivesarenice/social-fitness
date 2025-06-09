@@ -6,6 +6,7 @@ import LogActivityPage from './pages/LogActivityPage'; // Placeholder for Log Ac
 import LoginPage from './pages/LoginPage';
 import ManageGoalsPage from './pages/ManageGoalsPage'; // Import the new page
 import ProfilePage from './pages/ProfilePage';
+import SearchPage from './pages/SearchPage'; // Import the new page
 import SettingsPage from './pages/SettingsPage';
 import { supabase } from './supabaseClient';
 
@@ -98,6 +99,7 @@ function App() {
                                 <Route path="log-activity" element={<LogActivityPage />} />
                                 <Route path="manage-goals" element={<ManageGoalsPage />} /> {/* New route for managing goals */}
                                 <Route path="settings" element={<SettingsPage />} />
+                                <Route path="search" element={<SearchPage />} /> {/* New route for searching users */}
                                 {/* Add other protected routes here */}
                                 <Route path="*" element={<Navigate to="/" replace />} /> {/* Fallback for unknown protected routes */}
                             </Routes>
