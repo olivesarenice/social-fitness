@@ -207,7 +207,7 @@ const LogActivityPage = () => {
                                 const activity = preConfiguredActivities.find(act => act.id === goal.activity_id);
                                 return (
                                     <option key={goal.id} value={`${goal.id}|${activity ? activity.activity_class : ''}`}>
-                                        {goal.goal_description} <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-gray-700 ${activity ? (activity.activity_class === 'Cardio' ? 'bg-red-200' : activity.activity_class === 'Strength' ? 'bg-blue-200' : 'bg-gray-200') : 'bg-gray-200'}`}>{activity ? activity.activity_label : 'Unknown Activity'}</span>
+                                        {goal.goal_description} ({activity ? activity.activity_label : 'Unknown Activity'})
                                     </option>
                                 );
                             })}

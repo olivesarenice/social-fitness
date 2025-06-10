@@ -1,16 +1,15 @@
-# List of Features
 
-### Solar System Exploration, 1950s – 1960s
+# TODO:
 
-- [ ] Mercury
-- [x] Venus
-- [x] Earth (Orbit/Moon)
-- [x] Mars
-- [ ] Jupiter
-- [ ] Saturn
-- [ ] Uranus
-- [ ] Neptune
-- [ ] Comet Haley
+11 June
+1. Beautify the HomePage with icons - including abstracting the timestamp conversion and activity_class > emoji conversion functions
+2. Enable 'give support' like button on activities on home page
+3. Host app on Vercel for user feedback
+
+12 June
+1. Add gamification elements
+
+# Features
 
 ## Implementations
 
