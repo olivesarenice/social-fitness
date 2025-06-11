@@ -2,9 +2,9 @@
 # TODO:
 
 11 June
-1. Beautify the HomePage with icons - including abstracting the timestamp conversion and activity_class > emoji conversion functions
+1. Beautify the HomePage with icons - including abstracting the timestamp conversion and activity_class > emoji conversion functions [x]
 2. Enable 'give support' like button on activities on home page
-3. Host app on Vercel for user feedback
+3. Host app on Vercel for user feedback 
 
 12 June
 1. Add gamification elements

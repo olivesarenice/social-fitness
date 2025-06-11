@@ -2,6 +2,7 @@ import { formatDistanceToNow } from 'date-fns'; // For friendly date formatting
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { getEmojiForActivityClass } from '../utils/activityUtils';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -110,35 +111,84 @@ const HomePage = () => {
 const ActivityCard = ({ activity }) => {
     const navigate = useNavigate();
 
+    // Determine energy bar color
+    const energyColor = activity.current_energy < 25 ? 'bg-red-500' :
+        activity.current_energy < 50 ? 'bg-orange-500' :
+            activity.current_energy < 100 ? 'bg-green-500' :
+                activity.current_energy === 100 ? 'bg-gradient-to-r from-green-500 via-cyan-500 to-purple-500' :
+                    'bg-grey-500'; // Default color for other cases
+
+    // Construct Google Maps URL
+    const googleMapsUrl = activity.location_tag ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location_tag)}` : null;
+
+    // Determine border color based on activity_class
+    const activityClassColor = (activityClass) => {
+        switch (activityClass) {
+            case 'running':
+                return 'border-red-500';
+            case 'cycling':
+                return 'border-blue-500';
+            case 'swimming':
+                return 'border-green-500';
+            default:
+                return 'border-gray-500';
+        }
+    };
+    console.log(activity)
     return (
-        <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-            <div className="flex items-start space-x-3">
-                <img
-                    src={activity.avatar_url || `https://placehold.co/40x40/E0E0E0/B0B0B0?text=${(activity.display_name?.charAt(0) || 'U').toUpperCase()}`}
-                    alt="Avatar"
-                    className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                    onClick={() => navigate(`/profile/${activity.user_id}`)}
-                />
-                <div className="flex-1">
-                    <p className="text-sm text-gray-500">
-                        {formatDistanceToNow(new Date(activity.activity_timestamp), { addSuffix: true })}
-                    </p>
-                    <p className="font-medium text-gray-800">
-                        <span className="font-semibold cursor-pointer hover:underline" onClick={() => navigate(`/profile/${activity.user_id}`)}>
-                            {activity.display_name || activity.username}
+        <div className="p-4 border-b border-gray-200 bg-white hover:bg-gray-100 transition-colors relative"> {/* Added relative for absolute positioning of timestamp */}
+
+            <div className="flex items-start space-x-6">
+                <div className="w-24 flex-shrink-0"> {/* New container for avatar and username */}
+                    <div className="flex flex-col items-center"> {/* Container for avatar and username */}
+                        <img
+                            src={activity.avatar_url || `https://placehold.co/40x40/E0E0E0/B0B0B0?text=${(activity.display_name?.charAt(0) || 'U').toUpperCase()}`}
+                            alt="Avatar"
+                            className="w-12 h-12 rounded-full object-cover cursor-pointer"
+                            onClick={() => navigate(`/profile/${activity.user_id}`)}
+                        />
+                        <span className="text-xs font-medium text-gray-800 mt-1 cursor-pointer hover:underline" onClick={() => navigate(`/profile/${activity.user_id}`)}> {/* Username below avatar */}
+                            {activity.username}
                         </span>
-                        {' just completed '}
-                        <span className="font-semibold">{activity.activity_label || 'an activity'}</span>
-                        {activity.location_tag && ` at ${activity.location_tag}`}
-                    </p>
-                    {activity.goal_description && (
-                        <p className="text-xs text-green-600 mt-1">+1 towards "{activity.goal_description}"</p>
-                    )}
-                    <div className="mt-2 text-xs text-gray-500">
-                        <span>Energy: {activity.current_energy}%</span>
-                        <span className="mx-2">|</span>
-                        <span>Momentum: 🔥 {activity.current_momentum}</span>
+                        <div className="w-16 bg-gray-300 rounded-full h-2 mt-2">
+                            <div
+                                className={`${energyColor} h-2 rounded-full`}
+                                style={{ width: `${activity.current_energy}%` }}
+                            ></div>
+                        </div>
+
+                        <span className="text-xs font-medium text-gray-800 mt-1">🔥{activity.current_momentum}</span> {/* Only emoji and number */}
                     </div>
+                </div>
+
+                <div className="flex-1 mt-4"> {/* Adjusted margin top to account for timestamp */}
+                    <div className="flex justify-between items-center mb-2"> {/* Container for location and timestamp */}
+                        {/* Timestamp div (without absolute positioning) */}
+                        <p className="text-xs text-gray-500">
+                            {formatDistanceToNow(new Date(activity.activity_timestamp), { addSuffix: true })}
+                        </p>
+
+                        {/* Location div (without absolute positioning) */}
+                        {activity.location_tag && activity.location_tag !== 'Location Hidden' && ( // Conditional rendering for location
+                            <p className="text-xs text-gray-500">
+                                <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    📍{activity.location_tag}
+                                </a>
+                            </p>
+                        )}
+
+                    </div>
+                    <div className={`border ${activityClassColor(activity.activity_class)} p-2 rounded flex justify-between items-center`}>
+                        <p className="font-medium text-gray-800">
+                            <span className="font-medium">{activity.details_value} {activity.details_units} </span>
+                            <span className="font-semibold">{activity.activity_label || 'an activity'}</span>{' '}
+                            {getEmojiForActivityClass(activity.activity_class)}
+                        </p>
+                        <p className="text-gray-800 italic font-semibold">{activity.energy_gained}⚡</p>
+                    </div>
+                    {activity.goal_description && (
+                        <p className="text-xs text-green-600 mt-1">⬆️ towards "{activity.goal_description}"</p>
+                    )}
                 </div>
             </div>
         </div>

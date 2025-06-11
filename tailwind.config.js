@@ -7,7 +7,7 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', 'sans-serif'], // As per general guidelines
+                sans: ['Space Grotesk', 'sans-serif'], // Changed base font to Space Grotesk
             },
         },
     },
