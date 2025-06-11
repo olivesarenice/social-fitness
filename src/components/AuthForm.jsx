@@ -254,27 +254,6 @@ const AuthForm = () => {
                 )}
 
                 <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                        Password
-                    </label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        autoComplete={isSignUp ? "new-password" : "current-password"}
-                        required
-                        className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={loading}
-                    />
-                </div>
-                {isSignUp && (
-                    <p className="text-xs text-gray-500">Password should be at least 6 characters.</p>
-                )}
-
-                <div>
                     <button
                         type="submit"
                         disabled={loading || (isSignUp && (!username.trim() || !usernameAvailable || isCheckingUsername))}
