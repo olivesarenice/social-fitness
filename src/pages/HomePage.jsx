@@ -78,7 +78,6 @@ const HomePage = () => {
         <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
             <div className="bg-white p-6 rounded-xl shadow-lg max-w-2xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Home Feed</h1>
-                <p className="text-gray-600 mb-6">Welcome back, {user?.email || 'User'}!</p>
 
                 <div className="space-y-4">
                     {feedActivities.length > 0 ? (
