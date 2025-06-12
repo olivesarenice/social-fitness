@@ -1,71 +1,112 @@
-import { Lock } from 'lucide-react'; // Import the Lock icon
-import React, { useState } from 'react';
+import { Lock, Search as SearchIcon, UserPlus } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 const SearchPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isInitialView, setIsInitialView] = useState(true);
     const navigate = useNavigate();
+    const debounceTimeoutRef = useRef(null);
 
-    // CHANGED: The search logic now uses the RPC function
-    const handleSearch = async (e) => {
-        e.preventDefault();
+    // Function to get the initial list of latest users
+    const fetchLatestUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
+        setIsInitialView(true);
 
-        if (!searchQuery.trim()) {
-            setSearchResults([]);
-            setLoading(false);
-            return;
-        }
-
-        // Call our new, efficient RPC function
-        const { data, error } = await supabase.rpc('search_users', {
-            search_term: searchQuery.trim()
+        // CHANGED: Call the RPC with the new limit_count parameter
+        const { data, error } = await supabase.rpc('get_latest_users', {
+            limit_count: 10
         });
 
         if (error) {
-            console.error("Error searching users via RPC:", error);
-            setError("An error occurred during search.");
-            setSearchResults([]);
+            console.error("Error fetching latest users:", error);
+            setError("Could not load new users.");
         } else {
-            setSearchResults(data || []);
+            setResults(data || []);
+        }
+        setLoading(false);
+    }, []);
+
+    // Fetch initial data when the component mounts
+    useEffect(() => {
+        fetchLatestUsers();
+    }, [fetchLatestUsers]);
+
+    // This useEffect handles debounced searching as the user types
+    useEffect(() => {
+        // Clear any existing timeout
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
         }
 
-        setLoading(false);
-    };
+        // If the query is empty, show the latest users again
+        if (!searchQuery.trim()) {
+            fetchLatestUsers();
+            return;
+        }
+
+        // Set a new timeout to perform the search
+        debounceTimeoutRef.current = setTimeout(async () => {
+            setLoading(true);
+            setError(null);
+            setIsInitialView(false);
+
+            const { data, error } = await supabase.rpc('search_users', {
+                search_term: searchQuery.trim()
+            });
+
+            if (error) {
+                console.error("Error searching users:", error);
+                setError("An error occurred during search.");
+                setResults([]);
+            } else {
+                setResults(data || []);
+            }
+            setLoading(false);
+        }, 300); // 300ms debounce delay
+
+        // Cleanup function to clear timeout if component unmounts
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, [searchQuery, fetchLatestUsers]);
+
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Search Users</h1>
-            <form onSubmit={handleSearch} className="flex gap-4">
+        <div className="p-4 sm:p-6 space-y-6 bg-gray-50 min-h-screen">
+            <h1 className="text-3xl font-bold text-gray-800">Discover Users</h1>
+            <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                     type="text"
                     placeholder="Search by username or display name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-grow px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    disabled={loading}
-                >
-                    {loading ? 'Searching...' : 'Search'}
-                </button>
-            </form>
+            </div>
 
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-center text-red-500">{error}</p>}
 
-            <div className="space-y-4">
-                {searchResults.length > 0 ? (
-                    searchResults.map(user => (
+            <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-gray-700">
+                    {isInitialView ? 'Newest Members' : `Search Results for "${searchQuery}"`}
+                </h2>
+
+                {loading ? (
+                    <p className="text-center text-gray-500 py-8">Loading...</p>
+                ) : results.length > 0 ? (
+                    results.map(user => (
                         <div
                             key={user.id}
-                            className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:shadow-md transition-all cursor-pointer"
                             onClick={() => navigate(`/profile/${user.id}`)}
                         >
                             <img
@@ -77,16 +118,20 @@ const SearchPage = () => {
                                 <p className="font-medium text-gray-800">{user.display_name || user.username}</p>
                                 <p className="text-sm text-gray-600">@{user.username}</p>
                             </div>
-                            {/* CHANGED: Conditionally render the lock icon */}
                             {!user.is_public && (
-                                <Lock size={16} className="text-gray-400" />
+                                <Lock size={16} className="text-gray-400 mx-2" title="Private Account" />
                             )}
+                            {/* A placeholder for a follow button */}
+                            <button className="ml-4 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full hover:bg-blue-200">
+                                <UserPlus size={16} />
+                            </button>
                         </div>
                     ))
                 ) : (
-                    <p className="text-gray-500">
-                        {loading ? 'Searching...' : 'Enter a name to begin your search.'}
-                    </p>
+                    <div className="text-center py-8 px-4 bg-white rounded-lg border">
+                        <p className="text-gray-600 font-semibold">No users found.</p>
+                        <p className="text-sm text-gray-500 mt-1">Try a different search term.</p>
+                    </div>
                 )}
             </div>
         </div>

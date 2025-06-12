@@ -353,7 +353,7 @@ const ProfilePage = () => {
                     </div>
                     <div>
                         <p className="text-2xl font-bold text-green-600">{hasFullAccess ? profileData.lifetime_energy : '-'}</p>
-                        <p className="text-sm text-gray-500">Lifetime Points</p>
+                        <p className="text-sm text-gray-500">Lifetime Energy</p>
                     </div>
                     <div>
                         <p className="text-2xl font-bold text-purple-600">🏆 {hasFullAccess ? profileData.lifetime_momentum : '-'}</p>
