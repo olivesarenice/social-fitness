@@ -299,22 +299,23 @@ const ProfilePage = () => {
             <div className="bg-white p-6 rounded-xl shadow-lg">
 
                 {/* --- NEW: Main Header Container --- */}
-                <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-2">
 
-                    {/* Left Side: Avatar + User Info */}
-                    <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6 self-end">
+                    {/* Avatar */}
+                    <div className="flex justify-center sm:justify-start w-full sm:w-auto"> {/* Center avatar on small, left on large */}
                         <img
                             src={profileData.avatar_url || `https://placehold.co/128x128/E0E0E0/B0B0B0?text=${(profileData.display_name?.charAt(0) || 'U').toUpperCase()}`}
                             alt="Profile"
                             className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-500 flex-shrink-0"
                         />
-                        <div className="flex-1">
-                            <h1 className="text-3xl font-bold text-gray-800">{profileData.display_name || 'Unknown User'}</h1>
+                    </div>
+
+                    {/* Display Name/Username */}
+                    <div className="flex-1 text-center sm:text-left w-full sm:w-auto"> {/* Center text on small, left on large */}
+                        <h1 className="text-3xl font-bold text-gray-800">{profileData.display_name || 'Unknown User'}</h1>
+                        <div className="flex items-center justify-center sm:justify-start gap-2"> {/* New flex container for username and flairs */}
                             <p className="text-md text-blue-600">@{profileData.username || 'unknown'}</p>
-                            {!isOwnProfile && profileData.target_follow_status === 'accepted' && (
-                                <p className="text-sm text-gray-500 mt-1">Follows You</p>
-                            )}
-                            <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+                            <div className="flex flex-wrap justify-center sm:justify-start gap-2"> {/* Flairs container */}
                                 {profileData.flairs?.map(flair => (
                                     <span key={flair} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium flex items-center">
                                         <Award size={14} className="mr-1" /> {flair}
@@ -322,10 +323,13 @@ const ProfilePage = () => {
                                 ))}
                             </div>
                         </div>
+                        {!isOwnProfile && profileData.target_follow_status === 'accepted' && (
+                            <p className="text-sm text-gray-500 mt-1">Follows You</p>
+                        )}
                     </div>
 
-                    {/* Right Side: Socials (Posts, Followers, Following) */}
-                    <div className="grid grid-cols-3 gap-4 text-center pt-2 sm:pt-0 flex-shrink-0">
+                    {/* Socials (Posts, Followers, Following) */}
+                    <div className="grid grid-cols-3 gap-4 text-center pt-2 sm:pt-0 flex-shrink-0 w-full sm:w-auto"> {/* Added w-full sm:w-auto */}
                         <div className="p-2">
                             <p className="text-xl font-bold text-gray-800">{profileData.total_activities || 0}</p>
                             <p className="text-xs text-gray-500">Posts</p>
@@ -444,7 +448,7 @@ const ProfilePage = () => {
                     {/* Goals Section */}
                     <div className="bg-white p-6 rounded-xl shadow-lg">
                         <h2 className="text-xl font-semibold text-gray-700 mb-3">Active Goals</h2>
-                        <div className="grid grid-cols-3 gap-4"> {/* Use grid for 3 columns */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4"> {/* This is the grid container */}
                             {/* Map over slots (0, 1, 2) */}
                             {[0, 1, 2].map(slotIndex => {
                                 const goal = profileData.active_goals?.[slotIndex]; // Get goal for this slot

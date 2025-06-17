@@ -7,7 +7,8 @@
 
 12 June
 1. Add gamification elements
-2. Enable 'give support' like button on activities on home page
+2. Enable 'give support' like (cheers) button on activities on home page
+
 # Features
 
 ## Implementations

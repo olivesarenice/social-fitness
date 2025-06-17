@@ -1,4 +1,5 @@
 import { formatDistanceToNow } from 'date-fns'; // For friendly date formatting
+import { Heart } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -71,15 +72,15 @@ const HomePage = () => {
     };
 
     if (loading) {
-        return <div className="p-6 text-center text-gray-600">Loading your feed...</div>;
+        return <div className="p-6 text-center text-gray-600 text-xs">Loading your feed...</div>;
     }
 
     return (
-        <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-            <div className="bg-white p-6 rounded-xl shadow-lg max-w-2xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Home Feed</h1>
+        <div className="p-2 sm:p-4 bg-gray-50 min-h-screen">
+            <div className="bg-white p-4 rounded-xl shadow-lg max-w-2xl mx-auto">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">Home Feed</h1>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {feedActivities.length > 0 ? (
                         feedActivities.map(activity => (
                             <ActivityCard key={activity.activity_id} activity={activity} />
@@ -94,7 +95,7 @@ const HomePage = () => {
                         <div className="text-center pt-4">
                             <button
                                 onClick={handleLoadMore}
-                                className="px-4 py-2 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50"
+                                className="px-4 py-2 border border-blue-600 rounded-md shadow-sm text-xs font-medium text-blue-600 bg-white hover:bg-blue-50"
                             >
                                 Load More
                             </button>
@@ -109,7 +110,36 @@ const HomePage = () => {
 // A dedicated component for each item in the feed
 const ActivityCard = ({ activity }) => {
     const navigate = useNavigate();
+    const [bumpState, setBumpState] = useState({
+        count: activity.bump_count,
+        viewerHasBumped: activity.viewer_has_bumped,
+    });
 
+    const handleBumpToggle = async () => {
+        const hasBumped = bumpState.viewerHasBumped;
+
+        // Optimistic UI update for a snappy feel
+        setBumpState({
+            count: hasBumped ? bumpState.count - 1 : bumpState.count + 1,
+            viewerHasBumped: !hasBumped,
+        });
+
+        // Call the appropriate RPC in the background
+        const rpcName = hasBumped ? 'remove_bump' : 'add_bump';
+        const { error } = await supabase.rpc(rpcName, {
+            activity_id_input: activity.activity_id
+        });
+
+        if (error) {
+            console.error("Error toggling bump:", error);
+            // On error, revert the optimistic update
+            setBumpState({
+                count: activity.bump_count,
+                viewerHasBumped: activity.viewer_has_bumped,
+            });
+            alert("Couldn't give bump. Please try again.");
+        }
+    };
     // Determine energy bar color
     const energyColor = activity.current_energy < 25 ? 'bg-red-500' :
         activity.current_energy < 50 ? 'bg-orange-500' :
@@ -135,11 +165,12 @@ const ActivityCard = ({ activity }) => {
     };
     console.log(activity)
     return (
-        <div className="p-4 border-b border-gray-200 bg-white hover:bg-gray-100 transition-colors relative"> {/* Added relative for absolute positioning of timestamp */}
+        <div className="pr-4 pl-4 pb-4 border-b border-gray-200 bg-white hover:bg-gray-100 transition-colors relative"> {/* Added relative for absolute positioning of timestamp */}
 
-            <div className="flex items-start space-x-6">
-                <div className="w-24 flex-shrink-0"> {/* New container for avatar and username */}
-                    <div className="flex flex-col items-center"> {/* Container for avatar and username */}
+            <div className="flex items-start space-x-4 sm:space-x-6">
+
+                <div className="flex-shrink-0 w-20 sm:w-24"> {/* New container for avatar and username */}
+                    <div className="flex flex-col items-center mt-6"> {/* Container for avatar and username */}
                         <img
                             src={activity.avatar_url || `https://placehold.co/40x40/E0E0E0/B0B0B0?text=${(activity.display_name?.charAt(0) || 'U').toUpperCase()}`}
                             alt="Avatar"
@@ -149,18 +180,20 @@ const ActivityCard = ({ activity }) => {
                         <span className="text-xs font-medium text-gray-800 mt-1 cursor-pointer hover:underline" onClick={() => navigate(`/profile/${activity.user_id}`)}> {/* Username below avatar */}
                             {activity.username}
                         </span>
-                        <div className="w-16 bg-gray-300 rounded-full h-2 mt-2">
-                            <div
-                                className={`${energyColor} h-2 rounded-full`}
-                                style={{ width: `${activity.current_energy}%` }}
-                            ></div>
-                        </div>
+                        <div className="flex items-center mt-0">
+                            <div className="text-sm font-medium text-gray-800 mr-0">🔥</div> {/* ignore {activity.current_momentum} first */}
+                            <div className="w-16 bg-gray-300 rounded-full h-2 flex-grow mr-2">
+                                <div
+                                    className={`${energyColor} h-2 rounded-full`}
+                                    style={{ width: `${activity.current_energy}%` }}
+                                ></div>
 
-                        <span className="text-xs font-medium text-gray-800 mt-1">🔥{activity.current_momentum}</span> {/* Only emoji and number */}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-1 mt-4"> {/* Adjusted margin top to account for timestamp */}
+                <div className="flex-1"> {/* Adjusted margin top to account for timestamp */}
                     <div className="flex justify-between items-center mb-2"> {/* Container for location and timestamp */}
                         {/* Timestamp div (without absolute positioning) */}
                         <p className="text-xs text-gray-500">
@@ -169,7 +202,7 @@ const ActivityCard = ({ activity }) => {
 
                         {/* Location div (without absolute positioning) */}
                         {activity.location_tag && activity.location_tag !== 'Location Hidden' && ( // Conditional rendering for location
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 truncate max-w-32">
                                 <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                                     📍{activity.location_tag}
                                 </a>
@@ -178,16 +211,35 @@ const ActivityCard = ({ activity }) => {
 
                     </div>
                     <div className={`border ${activityClassColor(activity.activity_class)} p-2 rounded flex justify-between items-center`}>
-                        <p className="font-medium text-gray-800">
-                            <span className="font-medium">{activity.details_value} {activity.details_units} </span>
-                            <span className="font-semibold">{activity.activity_label || 'an activity'}</span>{' '}
-                            {getEmojiForActivityClass(activity.activity_class)}
-                        </p>
-                        <p className="text-gray-800 italic font-semibold">{activity.energy_gained}⚡</p>
+                        <div>
+                            <div>
+                                <p className="font-medium text-gray-800 text-sm">
+                                    <span className="font-medium">{activity.details_value} {activity.details_units} </span>
+                                </p>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-800 text-sm">
+                                    <span className="font-semibold">{activity.activity_label || 'an activity'}</span>{' '}
+                                    {getEmojiForActivityClass(activity.activity_class)}
+                                </p>
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-gray-800 italic font-semibold text-lg">{activity.energy_gained}⚡</p>
+                        </div>
                     </div>
-                    {activity.goal_description && (
-                        <p className="text-xs text-green-600 mt-1">⬆️ towards "{activity.goal_description}"</p>
-                    )}
+                    <div className="flex justify-between items-center mt-2">
+                        <button onClick={handleBumpToggle} className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors">
+                            <Heart
+                                size={18}
+                                className={bumpState.viewerHasBumped ? 'text-red-500 fill-current' : 'text-gray-400'}
+                            />
+                            <span className="font-medium text-xs">{bumpState.count}</span>
+                        </button>
+                        {activity.goal_description && (
+                            <p className="text-sm text-green-600 truncate max-w-32">"{activity.goal_description}"</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
