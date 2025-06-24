@@ -1,28 +1,63 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+// Assuming you have a similar helper for this page
+
+// NEW: Helper function to get the current local time in the format required by datetime-local input
+const getLocalISOString = () => {
+    const date = new Date();
+    // Adjust for the user's timezone offset to get the correct local time
+    const timezoneOffset = date.getTimezoneOffset() * 60000;
+    const localDate = new Date(date.getTime() - timezoneOffset);
+    // Format to "YYYY-MM-DDTHH:MM"
+    return localDate.toISOString().slice(0, 16);
+};
 
 const LogActivityPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false); // For submit button state
     const [activityLabel, setActivityLabel] = useState('');
-    const [customLabel, setCustomLabel] = useState(''); // Keep for now, but it won't be used if activity is always derived from goal
-    const [timestamp, setTimestamp] = useState(new Date().toISOString().slice(0, 16)); // For datetime-local input
+    // CHANGED: Use the helper function to correctly initialize to the user's local time
+    const [timestamp, setTimestamp] = useState(getLocalISOString());
     const [locationTag, setLocationTag] = useState('');
     const [hideLocation, setHideLocation] = useState(false);
     const [detailsValue, setDetailsValue] = useState('');
     const [detailsUnits, setDetailsUnits] = useState('');
     const [proofFile, setProofFile] = useState(null);
-    const [selectedGoal, setSelectedGoal] = useState(''); // ID of the goal this activity contributes to
+    const [selectedGoal, setSelectedGoal] = useState('');
 
     const [preConfiguredActivities, setPreConfiguredActivities] = useState([]);
     const [userGoals, setUserGoals] = useState([]);
-    const [availableUnits, setAvailableUnits] = useState([]); // New state for available units
+    const [availableUnits, setAvailableUnits] = useState([]);
+
+    // --- DATA FETCHING & UI LOGIC (No changes needed here) ---
+    const fetchInitialData = useCallback(async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+
+        // Fetch reference activities and user goals in parallel
+        const [activitiesRes, goalsRes] = await Promise.all([
+            supabase.from('activity_reference').select('id, activity_class, activity_label, allowed_units').order('activity_class').order('activity_label'),
+            supabase.from('goals').select('id, goal_description, activity_id').eq('user_id', user.id).eq('is_active', true).order('created_at', { ascending: false })
+        ]);
+
+        if (activitiesRes.error) console.error("Error fetching activities:", activitiesRes.error);
+        else setPreConfiguredActivities(activitiesRes.data || []);
+
+        if (goalsRes.error) console.error("Error fetching user goals:", goalsRes.error);
+        else setUserGoals(goalsRes.data || []);
+
+        setLoading(false);
+    }, [navigate]);
 
     useEffect(() => {
-        fetchActivities();
-        fetchUserGoals();
-    }, []);
+        fetchInitialData();
+    }, [fetchInitialData]);
 
     useEffect(() => {
         if (selectedGoal) {
@@ -30,78 +65,45 @@ const LogActivityPage = () => {
             if (goal) {
                 const activity = preConfiguredActivities.find(act => act.id === goal.activity_id);
                 if (activity) {
-                    setActivityLabel(activity.id); // Set activityLabel to the ID of the activity
+                    setActivityLabel(activity.id);
                 } else {
-                    setActivityLabel(''); // Reset if activity not found
+                    setActivityLabel('');
                 }
             }
         } else {
-            setActivityLabel(''); // Reset activityLabel if no goal is selected
+            setActivityLabel('');
         }
     }, [selectedGoal, userGoals, preConfiguredActivities]);
 
     useEffect(() => {
         const currentActivity = preConfiguredActivities.find(act => act.id === activityLabel);
-        if (currentActivity && currentActivity.allowed_units && currentActivity.allowed_units.length > 0) {
+        if (currentActivity?.allowed_units?.length > 0) {
             setAvailableUnits(currentActivity.allowed_units);
             if (!currentActivity.allowed_units.includes(detailsUnits)) {
-                setDetailsUnits(''); // Reset detailsUnits if current unit is not allowed
+                setDetailsUnits('');
             }
         } else {
             setAvailableUnits([]);
-            setDetailsUnits(''); // Clear units if no activity or no allowed units
+            setDetailsUnits('');
         }
-    }, [activityLabel, preConfiguredActivities, detailsUnits]); // Added detailsUnits to dependency array
+    }, [activityLabel, preConfiguredActivities, detailsUnits]);
 
 
-    const fetchActivities = async () => {
-        const { data, error } = await supabase
-            .from('activity_reference')
-            .select('id, activity_class, activity_label, allowed_units') // Include allowed_units
-            .order('activity_class', { ascending: true })
-            .order('activity_label', { ascending: true });
+    // --- FORM SUBMISSION ---
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-        if (error) {
-            console.error("Error fetching activities:", error);
-        } else {
-            setPreConfiguredActivities(data);
-        }
-    };
-
-    const fetchUserGoals = async () => {
-        setLoading(true);
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !user) {
-            console.error("User not logged in or error fetching user:", userError);
-            navigate('/login'); // Redirect to login if not authenticated
+        if (!selectedGoal) {
+            alert("Please select a goal for this activity. Activities must contribute to a goal to earn Energy.");
             return;
         }
 
-        const { data: goalsData, error: goalsError } = await supabase
-            .from('goals')
-            .select('id, goal_description, activity_id')
-            .eq('user_id', user.id)
-            .eq('is_active', true) // Only fetch active goals
-            .order('created_at', { ascending: false });
+        setIsSubmitting(true);
 
-        if (goalsError) {
-            console.error("Error fetching user goals:", goalsError);
-        } else {
-            setUserGoals(goalsData);
-        }
-        setLoading(false);
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-            console.error("User not logged in:", userError);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
             alert("You must be logged in to log an activity.");
-            setLoading(false);
+            setIsSubmitting(false);
             return;
         }
 
@@ -111,38 +113,24 @@ const LogActivityPage = () => {
             const fileName = `${user.id}/${Date.now()}.${fileExtension}`;
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('activity-proofs')
-                .upload(fileName, proofFile, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+                .upload(fileName, proofFile);
 
             if (uploadError) {
-                console.error("Error uploading proof:", uploadError);
                 alert("Error uploading proof: " + uploadError.message);
-                setLoading(false);
+                setIsSubmitting(false);
                 return;
             }
-            proofUrl = uploadData.path; // This is the path within the bucket
+            proofUrl = uploadData.path;
         }
 
-        const activityToInsert = {
-            user_id: user.id,
-            goal_id: selectedGoal || null,
-            activity_id: activityLabel || null, // Use activityLabel which holds the activity ID
-            timestamp: timestamp,
-            location_tag: hideLocation ? (locationTag ? 'Location Hidden' : '') : locationTag,
-            location_is_hidden: hideLocation,
-            details_value: detailsValue ? (isNaN(detailsValue) ? detailsValue : parseFloat(detailsValue)) : null,
-            details_units: detailsUnits || null,
-            proof_url: proofUrl,
-            energy_gained: null, // Removed as per user's manual edit
-        };
+        // CHANGED: Convert local datetime string from state to a full UTC ISO string for the database
+        const utcTimestamp = new Date(timestamp).toISOString();
 
-        // Step 2: Call the RPC function with the form data.
-        const { data: rpcData, error: rpcError } = await supabase.rpc('log_activity', {
-            goal_id_input: selectedGoal || null,
-            activity_id_input: activityLabel || null,
-            timestamp_input: timestamp,
+        // Call the new RPC that handles all game logic on the server
+        const { data: rpcData, error: rpcError } = await supabase.rpc('log_activity_and_update_stats', {
+            goal_id_input: selectedGoal,
+            activity_id_input: activityLabel,
+            timestamp_input: utcTimestamp, // Use the converted UTC timestamp
             location_tag_input: locationTag,
             location_is_hidden_input: hideLocation,
             details_value_input: detailsValue || null,
@@ -150,33 +138,22 @@ const LogActivityPage = () => {
             proof_url_input: proofUrl
         });
 
-        // Step 3: Handle the response from the RPC function.
         if (rpcError) {
             console.error("Error logging activity via RPC:", rpcError);
             alert("Error logging activity: " + rpcError.message);
         } else {
-            console.log('Activity logged successfully:', rpcData);
-            alert('Activity logged successfully!');
-            // Reset the form (this logic stays the same)
-            setActivityLabel('');
-            setCustomLabel('');
-            setTimestamp(new Date().toISOString().slice(0, 16));
-            setLocationTag('');
-            setHideLocation(false);
-            setDetailsValue('');
-            setDetailsUnits('');
-            setProofFile(null);
-            setSelectedGoal('');
+            // Give the user positive feedback from the server's response
+            alert(`Activity logged! You gained ${rpcData.energy_gained} energy!`);
+            navigate('/'); // Redirect to the home page to see the new activity in the feed
         }
-        setLoading(false);
+        setIsSubmitting(false);
     };
 
-    // Group activities by activity_class for optgroup display (still useful for understanding preConfiguredActivities)
+
+    // --- JSX RENDERING ---
     const groupedActivities = preConfiguredActivities.reduce((acc, activity) => {
         const { activity_class } = activity;
-        if (!acc[activity_class]) {
-            acc[activity_class] = [];
-        }
+        if (!acc[activity_class]) acc[activity_class] = [];
         acc[activity_class].push(activity);
         return acc;
     }, {});
@@ -186,28 +163,25 @@ const LogActivityPage = () => {
     }
 
     return (
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 bg-gray-50">
             <div className="bg-white p-6 rounded-xl shadow-lg max-w-lg mx-auto">
                 <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Log New Activity</h1>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="selectedGoal" className="block text-sm font-medium text-gray-700">Contributes to Goal</label>
+                        <label htmlFor="selectedGoal" className="block text-sm font-medium text-gray-700">Which goal does this contribute to?</label>
                         <select
                             id="selectedGoal"
-                            value={selectedGoal ? `${selectedGoal}|${preConfiguredActivities.find(act => act.id === userGoals.find(g => g.id === selectedGoal)?.activity_id)?.activity_class || ''}` : ''}
-                            onChange={(e) => {
-                                const [goalId, activityClass] = e.target.value.split('|');
-                                setSelectedGoal(goalId);
-                                // activityClass is now available here if needed, but the useEffect already handles finding the activity
-                            }}
+                            value={selectedGoal}
+                            onChange={(e) => setSelectedGoal(e.target.value)}
                             className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
                         >
-                            <option value="">Select Goal (Optional)</option>
+                            <option value="">Select a Goal</option>
                             {userGoals.map(goal => {
                                 const activity = preConfiguredActivities.find(act => act.id === goal.activity_id);
                                 return (
-                                    <option key={goal.id} value={`${goal.id}|${activity ? activity.activity_class : ''}`}>
-                                        {goal.goal_description} ({activity ? activity.activity_label : 'Unknown Activity'})
+                                    <option key={goal.id} value={goal.id}>
+                                        {goal.goal_description} ({activity ? activity.activity_label : '...'})
                                     </option>
                                 );
                             })}
@@ -216,38 +190,17 @@ const LogActivityPage = () => {
 
                     <div>
                         <label htmlFor="activityLabel" className="block text-sm font-medium text-gray-700">Activity</label>
-                        <select
+                        <input
                             id="activityLabel"
-                            value={activityLabel}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            disabled // Always disabled
-                        >
-                            <option value="">
-                                {selectedGoal ?
-                                    (preConfiguredActivities.find(act => act.id === activityLabel)?.activity_label || 'Loading Activity...')
-                                    : 'Select a Goal to choose Activity'}
-                            </option>
-                            {/* Options are dynamically set by selectedGoal useEffect, no direct selection here */}
-                        </select>
+                            type="text"
+                            value={preConfiguredActivities.find(act => act.id === activityLabel)?.activity_label || 'Select a goal first'}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm sm:text-sm"
+                            disabled
+                        />
                     </div>
 
-                    {/* Custom label input is removed as activity is now strictly derived from goal */}
-                    {/* {activityLabel === 'Custom' && (
-                        <div>
-                            <label htmlFor="customLabel" className="block text-sm font-medium text-gray-700">Custom Activity Name</label>
-                            <input
-                                type="text"
-                                id="customLabel"
-                                value={customLabel}
-                                onChange={(e) => setCustomLabel(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                placeholder="e.g., Morning Walk"
-                            />
-                        </div>
-                    )} */}
-
                     <div>
-                        <label htmlFor="timestamp" className="block text-sm font-medium text-gray-700">When</label>
+                        <label htmlFor="timestamp" className="block text-sm font-medium text-gray-700">When did you do it?</label>
                         <input
                             type="datetime-local"
                             id="timestamp"
@@ -265,54 +218,36 @@ const LogActivityPage = () => {
                             id="locationTag"
                             value={locationTag}
                             onChange={(e) => setLocationTag(e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="e.g., Anytime Fitness (Buona Vista)"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                            placeholder="e.g., The local gym"
                         />
-                        <div className="mt-1 flex items-center">
-                            <input
-                                id="hideLocation"
-                                type="checkbox"
-                                checked={hideLocation}
-                                onChange={(e) => setHideLocation(e.target.checked)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <label htmlFor="hideLocation" className="ml-2 block text-sm text-gray-900">Hide actual location details</label>
+                        <div className="mt-2 flex items-center">
+                            <input id="hideLocation" type="checkbox" checked={hideLocation} onChange={(e) => setHideLocation(e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                            <label htmlFor="hideLocation" className="ml-2 block text-sm text-gray-900">Hide location details</label>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">How (Details)</label>
+                        <label className="block text-sm font-medium text-gray-700">How much/long? (Details)</label>
                         <div className="flex space-x-2 mt-1">
                             <input
-                                type="text"
+                                type="number"
                                 value={detailsValue}
                                 onChange={(e) => setDetailsValue(e.target.value)}
-                                className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm"
                                 placeholder="e.g., 5 or 30"
+                                required
                             />
                             {availableUnits.length > 0 ? (
-                                <select
-                                    value={detailsUnits}
-                                    onChange={(e) => setDetailsUnits(e.target.value)}
-                                    className="block w-1/2 px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
+                                <select value={detailsUnits} onChange={(e) => setDetailsUnits(e.target.value)} className="block w-1/2 px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm" required>
                                     <option value="">Select Unit</option>
-                                    {availableUnits.map(unit => (
-                                        <option key={unit} value={unit}>{unit}</option>
-                                    ))}
+                                    {availableUnits.map(unit => (<option key={unit} value={unit}>{unit}</option>))}
                                 </select>
                             ) : (
-                                <input
-                                    type="text"
-                                    value={detailsUnits}
-                                    onChange={(e) => setDetailsUnits(e.target.value)}
-                                    className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    placeholder="e.g., km or mins or rounds"
-                                />
+                                <input type="text" value={detailsUnits} onChange={(e) => setDetailsUnits(e.target.value)} className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="e.g., km, reps" required />
                             )}
                         </div>
                     </div>
-
 
                     <div>
                         <label htmlFor="proofFile" className="block text-sm font-medium text-gray-700">Proof (Optional)</label>
@@ -326,9 +261,10 @@ const LogActivityPage = () => {
 
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        disabled={isSubmitting || !selectedGoal}
+                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                     >
-                        Log Activity
+                        {isSubmitting ? 'Logging...' : 'Log Activity'}
                     </button>
                 </form>
             </div>

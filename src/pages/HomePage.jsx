@@ -181,7 +181,7 @@ const ActivityCard = ({ activity }) => {
                             {activity.username}
                         </span>
                         <div className="flex items-center mt-0">
-                            <div className="text-sm font-medium text-gray-800 mr-0">🔥</div> {/* ignore {activity.current_momentum} first */}
+                            <div className="text-sm font-medium text-gray-800 mr-0">🔥{activity.current_momentum}</div> {/* ignore {activity.current_momentum} first */}
                             <div className="w-16 bg-gray-300 rounded-full h-2 flex-grow mr-2">
                                 <div
                                     className={`${energyColor} h-2 rounded-full`}
