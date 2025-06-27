@@ -9,7 +9,13 @@
 2. Enable 'give support' like (cheers) button on activities on home page [x]
 
 17 June
-1.  Add gamification elements
+1.  Add gamification elements [x]
+ 
+27 June
+1. Add momentum decay mehcanism[]
+2. Social
+   1. Add in notifications tab that shows pending follow requests (and popup counter)
+   2. Momentum Decay timer display on Profile page (next to the Momentum column)
 
 # Features
 

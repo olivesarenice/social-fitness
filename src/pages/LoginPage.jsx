@@ -9,7 +9,7 @@ const LoginPage = () => {
             <div className="mb-8 text-center">
                 {/* <img src={AppLogo} alt="App Logo" className="w-24 h-24 mx-auto mb-4" /> */}
                 <h1 className="text-5xl font-extrabold text-white">
-                    &lt;UNTITLED&gt;
+                    Momentum
                 </h1>
                 <p className="mt-2 text-lg text-slate-300">Gamify Your Fitness Journey.</p>
             </div>

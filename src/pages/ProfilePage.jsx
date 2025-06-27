@@ -332,7 +332,7 @@ const ProfilePage = () => {
                     <div className="grid grid-cols-3 gap-4 text-center pt-2 sm:pt-0 flex-shrink-0 w-full sm:w-auto"> {/* Added w-full sm:w-auto */}
                         <div className="p-2">
                             <p className="text-xl font-bold text-gray-800">{profileData.total_activities || 0}</p>
-                            <p className="text-xs text-gray-500">Posts</p>
+                            <p className="text-xs text-gray-500">Activities</p>
                         </div>
                         <div onClick={() => openFollowModal('followers', profileData.follower_count)} className="p-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
                             <p className="text-xl font-bold text-gray-800">{profileData.follower_count || 0}</p>
