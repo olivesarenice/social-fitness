@@ -137,16 +137,22 @@ const LogActivityPage = () => {
             details_units_input: detailsUnits || null,
             proof_url_input: proofUrl
         });
-
+        setIsSubmitting(false);
         if (rpcError) {
             console.error("Error logging activity via RPC:", rpcError);
             alert("Error logging activity: " + rpcError.message);
         } else {
             // Give the user positive feedback from the server's response
             alert(`Activity logged! You gained ${rpcData.energy_gained} energy!`);
-            navigate('/'); // Redirect to the home page to see the new activity in the feed
+            // NEW: If the user leveled up, set a flag in sessionStorage
+            if (rpcData.leveled_up) {
+                sessionStorage.setItem('userLeveledUp', 'true');
+            }
+
+            // Now navigate normally.
+            navigate('/', { replace: true });
         }
-        setIsSubmitting(false);
+
     };
 
 

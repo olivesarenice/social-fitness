@@ -12,10 +12,11 @@
 1.  Add gamification elements [x]
  
 27 June
-1. Add momentum decay mehcanism[]
+1. Add momentum decay mehcanism[x] - this runs daily at 12MN SGT - decay happens 1x a day, even if you have just been decayed the previous day. 
 2. Social
    1. Add in notifications tab that shows pending follow requests (and popup counter)
    2. Momentum Decay timer display on Profile page (next to the Momentum column)
+3. Need to troubleshoot the levleup confetti issue...
 
 # Features
 
