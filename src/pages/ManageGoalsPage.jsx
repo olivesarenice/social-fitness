@@ -1,4 +1,4 @@
-import { CheckCircle, Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, Edit, MinusCircle, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -309,7 +309,7 @@ const ManageGoalsPage = () => {
                                     </div>
                                     <div className="flex gap-2 mt-2 sm:mt-0 self-start">
                                         <button onClick={() => setEditingGoal(goal)} className="p-2 rounded-md text-blue-600 hover:bg-blue-100" title="Edit Goal"><Edit size={18} /></button>
-                                        <button onClick={() => handleToggleGoalActive(goal)} className="p-2 rounded-md text-red-600 hover:bg-red-100" title="Deactivate Goal"><XCircle size={18} /></button>
+                                        <button onClick={() => handleToggleGoalActive(goal)} className="p-2 rounded-md text-red-600 hover:bg-red-100" title="Deactivate Goal"><MinusCircle size={18} /></button>
                                     </div>
                                 </>
                             )}

@@ -103,9 +103,11 @@ const AuthForm = () => {
                         console.error("Error creating profile:", profileError);
                         setError("Sign up successful, but failed to create profile. Please try again.");
                     } else {
+                        localStorage.setItem('isNewUser', 'true');
                         setMessage('Sign up successful! Redirecting...');
                     }
                 } else if (response.data.session === null && response.data.user && response.data.user.identities && response.data.user.identities.length === 0) {
+                    localStorage.setItem('isNewUser', 'true');
                     setMessage('Sign up successful! Please check your email to verify your account.');
                 }
                 else {

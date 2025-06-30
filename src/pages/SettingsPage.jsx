@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 // Assuming you have lucide-react for icons
 import { LogOut } from 'lucide-react';
+import ProfileUpdatedPopup from '../components/ProfileUpdatedPopup';
 
 const SettingsPage = () => {
     // --- STATE MANAGEMENT ---
@@ -12,6 +13,7 @@ const SettingsPage = () => {
 
     // Form state for profile details
     const [username, setUsername] = useState('');
+    const [showUpdatedPopup, setShowUpdatedPopup] = useState(false);
     const [initialUsername, setInitialUsername] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
@@ -124,7 +126,7 @@ const SettingsPage = () => {
                     alert('This username was taken while you were making changes.');
                 } else { throw rpcError; }
             } else {
-                alert('Profile updated successfully!');
+                setShowUpdatedPopup(true);
                 setInitialUsername(updatedProfile.username);
                 setAvatarUrl(updatedProfile.avatar_url);
                 setDisplayName(updatedProfile.display_name);
@@ -184,6 +186,7 @@ const SettingsPage = () => {
 
     return (
         <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+            {showUpdatedPopup && <ProfileUpdatedPopup onClose={() => setShowUpdatedPopup(false)} />}
             <div className="bg-white p-6 rounded-xl shadow-lg max-w-2xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-800 mb-6">Settings</h1>
                 <div className="space-y-8">

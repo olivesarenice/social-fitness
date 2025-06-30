@@ -1,4 +1,4 @@
-import { Award, Lock, LogOut, Settings as SettingsIcon, Users, X } from 'lucide-react';
+import { Award, Flame, LogOut, Plus, Settings as SettingsIcon, Trophy, Users, X, Zap } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -51,7 +51,7 @@ const UserRow = ({ user, onClose }) => {
 };
 
 
-// --- MAIN PROFILE PAGE COMPONENT ---
+// --- MAIN PROFILE PAGE COMPONENT ---to t
 
 const ProfilePage = () => {
     const { userId: paramsUserId } = useParams();
@@ -346,22 +346,28 @@ const ProfilePage = () => {
                 </div>
 
                 {/* --- Detailed Stats (Now positioned below the header) --- */}
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t border-gray-200 pt-4">
-                    <div>
-                        <p className="text-2xl font-bold text-blue-600">{hasFullAccess ? profileData.energy : '-'}{hasFullAccess && '%'}</p>
-                        <p className="text-sm text-gray-500">⚡ Energy</p>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-center border-t border-gray-200 pt-4">
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-2xl font-bold text-orange-500 flex items-center justify-center"><Flame size={24} className="mr-1" /> {hasFullAccess ? profileData.momentum : '-'}</p>
+                            <p className="text-sm text-gray-500">Momentum</p>
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-purple-600 flex items-center justify-center"><Trophy size={24} className="mr-1" /> {hasFullAccess ? profileData.lifetime_momentum : '-'}</p>
+                            <p className="text-sm text-gray-500">Max Momentum</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-2xl font-bold text-orange-500">🔥 {hasFullAccess ? profileData.momentum : '-'}</p>
-                        <p className="text-sm text-gray-500">Momentum</p>
-                    </div>
-                    <div>
-                        <p className="text-2xl font-bold text-green-600">{hasFullAccess ? profileData.lifetime_energy : '-'}</p>
-                        <p className="text-sm text-gray-500">Lifetime Energy</p>
-                    </div>
-                    <div>
-                        <p className="text-2xl font-bold text-purple-600">🏆 {hasFullAccess ? profileData.lifetime_momentum : '-'}</p>
-                        <p className="text-sm text-gray-500">Max Momentum</p>
+                    <div className="sm:col-span-1">
+                        <p className="text-sm text-gray-500 mb-1 flex items-center justify-center"><Zap size={24} className="mr-1 text-yellow-500" /> {profileData.energy_for_next_level - profileData.current_energy} pts to next level</p>
+                        {hasFullAccess ? (
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                                <div className="bg-blue-500 h-4 rounded-full" style={{ width: `${profileData.energy}%` }}></div>
+                            </div>
+                        ) : (
+                            <p className="text-2xl font-bold text-gray-400">-</p>
+                        )}
+
                     </div>
                 </div>
 
@@ -474,7 +480,7 @@ const ProfilePage = () => {
                                         ) : (
                                             /* Render Placeholder */
                                             <div className="flex flex-col items-center justify-center text-gray-400 h-full">
-                                                <Lock size={24} /> {/* Use Lock icon */}
+                                                <Plus size={24} /> {/* Use Plus icon */}
                                                 <p className="text-sm mt-2">Empty Slot</p>
                                             </div>
                                         )}

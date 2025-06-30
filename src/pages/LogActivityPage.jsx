@@ -1,7 +1,20 @@
+import { Zap } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 // Assuming you have a similar helper for this page
+
+const Modal = ({ title, children, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">{title}</h2>
+            <div className="text-gray-600 mb-6">{children}</div>
+            <button onClick={onClose} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700">
+                OK
+            </button>
+        </div>
+    </div>
+);
 
 // NEW: Helper function to get the current local time in the format required by datetime-local input
 const getLocalISOString = () => {
@@ -26,6 +39,7 @@ const LogActivityPage = () => {
     const [detailsUnits, setDetailsUnits] = useState('');
     const [proofFile, setProofFile] = useState(null);
     const [selectedGoal, setSelectedGoal] = useState('');
+    const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
 
     const [preConfiguredActivities, setPreConfiguredActivities] = useState([]);
     const [userGoals, setUserGoals] = useState([]);
@@ -94,7 +108,7 @@ const LogActivityPage = () => {
         e.preventDefault();
 
         if (!selectedGoal) {
-            alert("Please select a goal for this activity. Activities must contribute to a goal to earn Energy.");
+            setModal({ isOpen: true, title: 'Goal Required', message: 'Please select a goal for this activity. Activities must contribute to a goal to earn Energy.' });
             return;
         }
 
@@ -102,7 +116,7 @@ const LogActivityPage = () => {
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            alert("You must be logged in to log an activity.");
+            setModal({ isOpen: true, title: 'Authentication Error', message: 'You must be logged in to log an activity.' });
             setIsSubmitting(false);
             return;
         }
@@ -116,7 +130,7 @@ const LogActivityPage = () => {
                 .upload(fileName, proofFile);
 
             if (uploadError) {
-                alert("Error uploading proof: " + uploadError.message);
+                setModal({ isOpen: true, title: 'Upload Error', message: `Error uploading proof: ${uploadError.message}` });
                 setIsSubmitting(false);
                 return;
             }
@@ -140,17 +154,22 @@ const LogActivityPage = () => {
         setIsSubmitting(false);
         if (rpcError) {
             console.error("Error logging activity via RPC:", rpcError);
-            alert("Error logging activity: " + rpcError.message);
+            setModal({ isOpen: true, title: 'Error', children: `Error logging activity: ${rpcError.message}` });
         } else {
-            // Give the user positive feedback from the server's response
-            alert(`Activity logged! You gained ${rpcData.energy_gained} energy!`);
-            // NEW: If the user leveled up, set a flag in sessionStorage
-            if (rpcData.leveled_up) {
-                sessionStorage.setItem('userLeveledUp', 'true');
-            }
-
-            // Now navigate normally.
-            navigate('/', { replace: true });
+            setModal({
+                isOpen: true,
+                title: 'Activity Logged!',
+                children: (
+                    <div>
+                        <p className="text-lg">You gained</p>
+                        <p className="text-6xl font-bold my-2 flex items-center justify-center">
+                            <Zap size={60} className="mr-2 text-yellow-500" />
+                            {rpcData.energy_gained}
+                        </p>
+                    </div>
+                ),
+                onClose: () => navigate('/', { replace: true, state: { leveledUp: rpcData.leveled_up } })
+            });
         }
 
     };
@@ -170,6 +189,19 @@ const LogActivityPage = () => {
 
     return (
         <div className="p-4 sm:p-6 bg-gray-50">
+            {modal.isOpen && (
+                <Modal
+                    title={modal.title}
+                    onClose={() => {
+                        setModal({ isOpen: false, title: '', children: null });
+                        if (modal.onClose) {
+                            modal.onClose();
+                        }
+                    }}
+                >
+                    {modal.children}
+                </Modal>
+            )}
             <div className="bg-white p-6 rounded-xl shadow-lg max-w-lg mx-auto">
                 <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Log New Activity</h1>
                 <form onSubmit={handleSubmit} className="space-y-4">

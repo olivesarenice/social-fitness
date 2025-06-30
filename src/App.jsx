@@ -13,6 +13,7 @@ import { supabase } from './supabaseClient';
 function App() {
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showHelpOnFirstLogin, setShowHelpOnFirstLogin] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -38,7 +39,13 @@ function App() {
                     if (_event === 'SIGNED_OUT') {
                         navigate('/login');
                     }
-                    if (_event === 'SIGNED_IN' && window.location.pathname === '/login') {
+                    if (_event === 'SIGNED_IN') {
+                        const isNewUser = localStorage.getItem('isNewUser');
+                        if (isNewUser === 'true') {
+                            setShowHelpOnFirstLogin(true);
+                            localStorage.removeItem('isNewUser');
+                        }
+
                         // Check if profile exists, if not, redirect to settings
                         const checkProfile = async () => {
                             if (supabase?.auth?.currentUser) {
@@ -55,7 +62,7 @@ function App() {
                                 // If no profile data, redirect to manage-goals to prompt goal creation
                                 if (!data) {
                                     navigate('/manage-goals');
-                                } else {
+                                } else if (window.location.pathname === '/login') {
                                     navigate('/');
                                 }
                             }
@@ -93,7 +100,7 @@ function App() {
                     <ProtectedRoute>
                         <Layout session={session}> {/* Pass session to Layout if needed for user info */}
                             <Routes>
-                                <Route index element={<HomePage />} />
+                                <Route index element={<HomePage showHelpOnFirstLogin={showHelpOnFirstLogin} setShowHelpOnFirstLogin={setShowHelpOnFirstLogin} />} />
                                 <Route path="profile" element={<ProfilePage />} />
                                 <Route path="profile/:userId" element={<ProfilePage />} /> {/* For viewing other profiles */}
                                 <Route path="log-activity" element={<LogActivityPage />} />
