@@ -13,7 +13,7 @@ const LoginPage = () => {
                 </h1>
                 <p className="mt-2 text-lg text-slate-300">Gamify Your Fitness Journey.</p>
             </div>
-            <AuthForm />
+            <AuthForm isSignUpPage={false} />
         </div>
     );
 };

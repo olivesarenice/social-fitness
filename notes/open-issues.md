@@ -14,10 +14,15 @@
 27 June
 1. Add momentum decay mehcanism[x] - this runs daily at 12MN SGT - decay happens 1x a day, even if you have just been decayed the previous day. 
 2. Social
-   1. Add in notifications tab that shows pending follow requests (and popup counter)
-   2. Momentum Decay timer display on Profile page (next to the Momentum column)
-3. Need to troubleshoot the levleup confetti issue...
+   1. Add in notifications tab that shows pending follow requests (and popup counter) [x]
+   2. Momentum Decay timer display on Profile page (next to the Momentum column) [x]
+3. Need to troubleshoot the levleup confetti issue... [x]
 
+1. Add how to (?) page at the top right [x]
+2. Add follow requests on top banner [x]
+3. Add SSO for Google signins [x]
+4. Improve new user flow [x]
+5. 
 # Features
 
 ## Implementations

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import CreateProfilePage from './pages/CreateProfilePage';
 import HomePage from './pages/HomePage';
 import LogActivityPage from './pages/LogActivityPage'; // Placeholder for Log Activity
 import LoginPage from './pages/LoginPage';
@@ -8,12 +9,12 @@ import ManageGoalsPage from './pages/ManageGoalsPage'; // Import the new page
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage'; // Import the new page
 import SettingsPage from './pages/SettingsPage';
+import SignUpPage from './pages/SignUpPage';
 import { supabase } from './supabaseClient';
 
 function App() {
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showHelpOnFirstLogin, setShowHelpOnFirstLogin] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -40,34 +41,36 @@ function App() {
                         navigate('/login');
                     }
                     if (_event === 'SIGNED_IN') {
-                        const isNewUser = localStorage.getItem('isNewUser');
-                        if (isNewUser === 'true') {
-                            setShowHelpOnFirstLogin(true);
-                            localStorage.removeItem('isNewUser');
-                        }
-
                         // Check if profile exists, if not, redirect to settings
                         const checkProfile = async () => {
-                            if (supabase?.auth?.currentUser) {
+                            if (session?.user) {
                                 const { data, error } = await supabase
                                     .from('profiles')
                                     .select('*')
-                                    .eq('id', supabase.auth.currentUser.id)
+                                    .eq('id', session.user.id)
                                     .single();
 
-                                if (error) {
+                                if (error && error.code !== 'PGRST116') { // Ignore no rows found error
                                     console.error("Error fetching profile:", error);
                                 }
 
-                                // If no profile data, redirect to manage-goals to prompt goal creation
+                                // If no profile data, redirect to create profile page
                                 if (!data) {
-                                    navigate('/manage-goals');
-                                } else if (window.location.pathname === '/login') {
+                                    if (session.user.app_metadata?.provider === 'google') {
+                                        navigate('/create-profile');
+                                    } else {
+                                        // This case is for email sign up, which should have created a profile.
+                                        // If not, something went wrong, but we can send them to manage-goals as a fallback.
+                                        navigate('/manage-goals');
+                                    }
+                                } else {
+                                    // If profile exists, navigate to home.
                                     navigate('/');
                                 }
                             }
                         };
-                        checkProfile();
+                        // A short delay to ensure the session is fully processed before checking profile
+                        setTimeout(checkProfile, 100);
                     }
                 }
             );
@@ -94,13 +97,15 @@ function App() {
     return (
         <Routes>
             <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
+            <Route path="/signup" element={!session ? <SignUpPage /> : <Navigate to="/" />} />
+            <Route path="/create-profile" element={session ? <CreateProfilePage /> : <Navigate to="/login" />} />
             <Route
                 path="/*"
                 element={
                     <ProtectedRoute>
                         <Layout session={session}> {/* Pass session to Layout if needed for user info */}
                             <Routes>
-                                <Route index element={<HomePage showHelpOnFirstLogin={showHelpOnFirstLogin} setShowHelpOnFirstLogin={setShowHelpOnFirstLogin} />} />
+                                <Route index element={<HomePage />} />
                                 <Route path="profile" element={<ProfilePage />} />
                                 <Route path="profile/:userId" element={<ProfilePage />} /> {/* For viewing other profiles */}
                                 <Route path="log-activity" element={<LogActivityPage />} />

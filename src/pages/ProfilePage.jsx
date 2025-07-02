@@ -1,6 +1,6 @@
 import { Award, Flame, LogOut, Plus, Settings as SettingsIcon, Trophy, Users, X, Zap } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { getEmojiForActivityClass } from '../utils/activityUtils'; // Import emoji helper
 
@@ -479,10 +479,10 @@ const ProfilePage = () => {
                                             </div>
                                         ) : (
                                             /* Render Placeholder */
-                                            <div className="flex flex-col items-center justify-center text-gray-400 h-full">
+                                            <Link to="/manage-goals" className="flex flex-col items-center justify-center text-gray-400 h-full hover:bg-gray-100 rounded-lg">
                                                 <Plus size={24} /> {/* Use Plus icon */}
                                                 <p className="text-sm mt-2">Empty Slot</p>
-                                            </div>
+                                            </Link>
                                         )}
                                     </div>
                                 );

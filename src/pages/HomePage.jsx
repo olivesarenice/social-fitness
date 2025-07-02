@@ -2,7 +2,7 @@ import { formatDistanceToNow } from 'date-fns'; // For friendly date formatting
 import { AlertTriangle, Flame, Heart, HelpCircle, Hourglass, Info, Shield, Target, UserPlus, X, Zap } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import Confetti from 'react-confetti'; // Import the confetti library
-import { useLocation, useNavigate } from 'react-router-dom'; // Import useLocation
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // Import useLocation
 import GameMechanicsPopup from '../components/GameMechanicsPopup';
 import { supabase } from '../supabaseClient';
 import { getEmojiForActivityClass } from '../utils/activityUtils';
@@ -217,7 +217,7 @@ const StatusHeader = ({ onInfoClick, statusData }) => {
     );
 };
 
-const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
+const HomePage = () => {
     const navigate = useNavigate();
     const location = useLocation(); // Hook to get location object
     const [user, setUser] = useState(null);
@@ -228,6 +228,7 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
     const [hasMore, setHasMore] = useState(true);
     const [pendingRequests, setPendingRequests] = useState([]);
     const [statusData, setStatusData] = useState(null);
+    const [showHelpMessage, setShowHelpMessage] = useState(false);
     // NEW: State to control the confetti effect
     const [showConfetti, setShowConfetti] = useState(false);
     const [showLevelUpPopup, setShowLevelUpPopup] = useState(false);
@@ -237,12 +238,6 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
     const [showFollowRequests, setShowFollowRequests] = useState(false);
     const [infoPopup, setInfoPopup] = useState({ isOpen: false, type: null });
     const [showGameMechanics, setShowGameMechanics] = useState(false);
-
-    useEffect(() => {
-        if (showHelpOnFirstLogin) {
-            setShowGameMechanics(true);
-        }
-    }, [showHelpOnFirstLogin]);
 
     useEffect(() => {
         if (location.state?.leveledUp) {
@@ -268,14 +263,15 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
         if (!user) { navigate('/login'); return; }
         setUser(user);
 
-        // Fetch feed, pending requests, and status in parallel
-        const [feedRes, requestsRes, statusRes] = await Promise.all([
+        // Fetch feed, pending requests, status, and goals in parallel
+        const [feedRes, requestsRes, statusRes, goalsRes] = await Promise.all([
             supabase.rpc('get_home_feed', {
                 page_limit: PAGE_SIZE,
                 page_offset: pageNum * PAGE_SIZE
             }),
             supabase.rpc('get_pending_follow_requests'), // Use new RPC
-            supabase.rpc('get_user_status_header')
+            supabase.rpc('get_user_status_header'),
+            supabase.from('goals').select('id').eq('user_id', user.id)
         ]);
 
         if (feedRes.error) {
@@ -302,6 +298,15 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
             console.error("Error fetching status header data:", statusRes.error);
         } else {
             setStatusData(statusRes.data);
+        }
+
+        if (goalsRes.error) {
+            console.error("Error fetching goals:", goalsRes.error);
+        } else {
+            if (goalsRes.data.length === 0) {
+                setShowHelpMessage(true);
+                setShowGameMechanics(true);
+            }
         }
 
         if (pageNum === 0) setLoading(false);
@@ -374,6 +379,13 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
 
                 <StatusHeader onInfoClick={handleInfoClick} statusData={statusData} />
 
+                {showHelpMessage && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                        <h3 className="text-lg font-semibold text-blue-800">Welcome to Momentum!</h3>
+                        <p className="text-blue-700 mt-1">It looks like you haven't set any goals yet. Head over to the <Link to="/profile" className="font-bold underline">Profile</Link> page to get started!</p>
+                    </div>
+                )}
+
                 <div className="border-t border-gray-200 my-6"></div>
 
                 <div className="space-y-4">
@@ -415,12 +427,7 @@ const HomePage = ({ showHelpOnFirstLogin, setShowHelpOnFirstLogin }) => {
             {showLevelUpPopup && statusData && (
                 <LevelUpPopup level={statusData.current_momentum} onClose={() => setShowLevelUpPopup(false)} />
             )}
-            {showGameMechanics && <GameMechanicsPopup onClose={() => {
-                setShowGameMechanics(false);
-                if (showHelpOnFirstLogin) {
-                    setShowHelpOnFirstLogin(false);
-                }
-            }} />}
+            {showGameMechanics && <GameMechanicsPopup onClose={() => setShowGameMechanics(false)} />}
         </div>
     );
 };
